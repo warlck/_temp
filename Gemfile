@@ -32,7 +32,7 @@ group :development, :test do
 	gem 'guard-rspec'
 	gem 'guard-spork'
 	gem 'childprocess'
-	gem 'spork'
+	gem 'spork-rails', :github => 'sporkrb/spork-rails'
 	gem 'debugger'
 end
 
