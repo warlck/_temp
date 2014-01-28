@@ -20,6 +20,9 @@ ActiveRecord::Schema.define(version: 20140128091608) do
     t.datetime "created_at"
   end
 
+  add_index "point_line_items", ["created_at"], name: "index_point_line_items_on_created_at"
+  add_index "point_line_items", ["user_id"], name: "index_point_line_items_on_user_id"
+
   create_table "users", force: true do |t|
     t.string   "name"
     t.datetime "created_at"

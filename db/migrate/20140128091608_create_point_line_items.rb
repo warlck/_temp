@@ -6,5 +6,8 @@ class CreatePointLineItems < ActiveRecord::Migration
       t.string      :source
       t.datetime    :created_at
     end
+
+    add_index :point_line_items, :user_id
+    add_index :point_line_items, :created_at
   end
 end
