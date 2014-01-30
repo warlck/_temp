@@ -1,23 +1,23 @@
 class PointExpirer
-	delegate :users_having_items_on, 
-	         :points_available?,
-	         :points_unti_expired,
+	delegate :points_available?,
+	         :points_until_expired,
 	         :redeem_points, 
 	         :expire_points, 
+	         :latest_pli_of,
 	         to: :PointLineItem
 
+
+	def initialize user
+		@user = user
+	end
+
 	def expire(input_date)
-		date = (input_date.to_date - 1.year)
-		users = users_having_items_on date
-		debugger
-		users.each do |user| 
-			if points_available? user, date
-			   points_to_expire = points_unti_expired(user, date) + redeem_points(user, date)
-			   #expire_points user, date, points_to_expire
-			end
-		end
-
-
-
+		date = input_date.to_date - 1.year
+		latest_pli = latest_pli_of @user, date
+		if points_available? @user, latest_pli.created_at
+			points_to_expire = points_until_expired(@user, latest_pli.created_at). 
+			                   + redeem_points(@user, latest_pli.created_at)
+            expire_points @user, points_to_expire, latest_pli 
+        end
 	end
 end

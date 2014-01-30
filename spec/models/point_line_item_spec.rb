@@ -23,24 +23,7 @@ describe PointLineItem do
 		end
 	end
 
-	describe ".users_having_items_on" do
-		it "is defined" do
-			expect(PointLineItem).to respond_to :users_having_items_on
-		end
 
-		it "returns users that have point line items on given date" do
-			adam = create(:user, name: "Adam")
-			bella = create(:user, name: "Bella")
-			carl = create(:user, name: "Carl")
-			adams_item = create(:point_line_item, user: adam, created_at: '20/01/2014')
-			bellas_item  = create(:point_line_item, user: bella, created_at: '20/01/2014')
-			carls_item = create(:point_line_item, user: carl, created_at: '21/01/2014')
-
-			expect(PointLineItem.users_having_items_on("20/01/2014")).to eq [adam, bella]
-		end
-
-		
-	end
 
 	describe ".points_available?" do
 		before(:each) do
@@ -114,8 +97,49 @@ describe PointLineItem do
 		end
 	end
 
+	describe ".latest_pli_of" do
+		before(:each) do 
+			@adam = create(:user, name: "Adam")
+			@bella = create(:user, name: "Bella")
+			@carl = create(:user, name: "Carl")
+			@adams_zeroth_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 10:30', points: 20)
+			@adams_first_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 12:30', points: 100)
+			@adams_second_item = create(:point_line_item, user: @adam,created_at: '21/01/2014', points: -10)
+			
+			bellas_item  = create(:point_line_item, user: @bella, created_at: '20/01/2014')
+			carls_item = create(:point_line_item, user: @carl, created_at: '21/01/2014')
+		end
+
+		it "returns the  user's  last point line item that was created for given date if available" do
+			expect(PointLineItem.latest_pli_of(@adam, '20/01/2014')).to eq @adams_first_item
+		end
+
+		it "returns the closest positive  point line item entry created in previously if non available on given date" do
+			expect(PointLineItem.latest_pli_of(@adam, '22/01/2014')).to eq @adams_first_item
+		end
+	end
+
 	describe ".expire_points" do
-		
+		before(:each) do
+			@user = create(:user)
+			@points_to_expire = 20
+			@pli = create(:point_line_item, user_id: @user.id)
+		end
+
+ 
+		it "adds new entry to point_line_items table" do
+			expect{PointLineItem.expire_points(@user, @points_to_expire, @pli)}.to change(PointLineItem, :count).by(1)
+		end
+
+		it "adds correct source text" do
+			PointLineItem.expire_points(@user, @points_to_expire, @pli)
+			expect(PointLineItem.last.source).to eq "Points ##{@pli.id} expired"
+		end
+
+		it "changes expired field of pli to true" do
+			PointLineItem.expire_points(@user, @points_to_expire, @pli)
+			expect(@pli.reload.expired).to eq true		
+		end
 	end
 
   

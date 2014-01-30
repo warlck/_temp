@@ -1,6 +1,15 @@
 require 'spec_helper'
 
 describe PointExpirer do
+
+    describe "initalizer" do
+    	let(:user) { create(:user) }
+    	it "is successfully initalized with  user" do
+			expect{PointExpirer.new(user)}.not_to raise_error
+	    end
+
+    end
+	
 	 describe "#expire" do
 	 	before(:each) do 
 	 		@adam = create(:user, name: "Adam")
@@ -17,11 +26,26 @@ describe PointExpirer do
 			bellas_item  = create(:point_line_item, user: @bella, created_at: '20/01/2014')
 			carls_item = create(:point_line_item, user: @carl, created_at: '21/01/2014')
 	 	end
-	 	let(:point_expirer) { PointExpirer.new }
+	 	let(:point_expirer) { PointExpirer.new(@adam) }
 
-	 	it "adds new entry to point_line_items table" do
-	 		#expect{point_expirer.expire("13/03/2014")}.to change(PointLineItem, :count).by(1)
-	 		expect(point_expirer.expire("12/03/2014")).to eq 265
+	 	it "adds correct new entry to point_line_items table" do
+	 		point_expirer.expire('13/03/2014')
+	 		expect(PointLineItem.last.points).to eq -265 
+	 	end
+
+	 	it "when called on last items date given above" do
+	 		point_expirer.expire('28/06/2014')
+	 		expect(PointLineItem.last.points).to eq -395
+	 	end
+
+	 	it " when expire is called twice on different dates" do
+	 		point_expirer.expire('13/03/2014')
+	 		point_expirer.expire('28/06/2014')
+	 		expect(PointLineItem.last.points).to eq -130
+	 	end
+
+	 	it "when called for unavalable points" do
+			expect{point_expirer.expire('15/02/2014')}.to change(PointLineItem, :count).by(0)
 	 	end
 
 	 end
