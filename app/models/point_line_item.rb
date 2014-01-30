@@ -82,7 +82,4 @@ class PointLineItem < ActiveRecord::Base
 	  end
 
 
-
-
-
 end

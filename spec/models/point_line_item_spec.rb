@@ -114,6 +114,10 @@ describe PointLineItem do
 		end
 	end
 
+	describe ".expire_points" do
+		
+	end
+
   
 end
 
