@@ -4,6 +4,7 @@ describe PointLineItem do
 	it { should respond_to(:points)}
 	it { should respond_to(:source)}
 	it { should respond_to(:created_at)}
+	it { should respond_to(:expired)}
 
 	it { should belong_to(:user)}
 
