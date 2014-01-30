@@ -10,23 +10,17 @@ class PointLineItem < ActiveRecord::Base
 	end
 
 	def self.points_available? user, input_date
-		date = input_date.to_date
-		current_pli = latest_pli_of user, date
-		plis  = plis_after user, current_pli.created_at
+		plis  = plis_after user, input_date
 		available? plis
 	end
 
 	def self.points_until_expired user, input_date
-	    date = input_date.to_date
-	    current_pli = latest_pli_of user, date
-	    plis = plis_up_to user, current_pli.created_at
+	    plis = plis_up_to user, input_date
 	    sum_until_expired plis
 	end
 
 	def self.redeem_points user, input_date
-		date = input_date.to_date
-		current_pli = latest_pli_of user, date
-		plis = plis_after user, current_pli.created_at
+		plis = plis_after user, input_date
         redeem plis
 	end
 
@@ -41,12 +35,16 @@ class PointLineItem < ActiveRecord::Base
 	  	created_on(date).where(user_id: user.id).order("created_at DESC").first
 	  end
 
-	  def self.plis_after user, date
-	  	where("user_id = ? and created_at > ?", user.id, date)
+	  def self.plis_after user, input_date
+	  	date = input_date.to_date
+		current_pli = latest_pli_of user, date
+	  	where("user_id = ? and created_at > ?", user.id, current_pli.created_at)
 	  end
 
-	  def self.plis_up_to user, date
-		where("user_id = ? and created_at <= ?", user.id, date)
+	  def self.plis_up_to user, input_date
+	  	date = input_date.to_date
+	    current_pli = latest_pli_of user, date
+		where("user_id = ? and created_at <= ?", user.id, current_pli.created_at)
 	  end
 
 	  def self.available? plis
