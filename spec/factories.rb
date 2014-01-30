@@ -3,4 +3,8 @@ FactoryGirl.define do
 		points 100
 		source "Make a purchase"
 	end
+
+	factory :user do
+		name "Adam"
+	end
 end
