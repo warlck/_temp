@@ -60,12 +60,14 @@ module Concerns
 			  	available = true
 			  	previous = plis.first
 			  	plis.each do |pli|
-			  		if  (previous.points > 0) && (pli.points < 0)
-			  		  available = false
-			  		  break
-		  		    else 
-		  		      previous = pli
-			        end  
+			  		unless pli.expired
+				  		if  (previous.points > 0) && (pli.points < 0)
+				  		  available = false
+				  		  break
+			  		    else 
+			  		      previous = pli
+				        end  
+				    end
 			    end
 			    return available
 			  end
