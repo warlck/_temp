@@ -31,7 +31,7 @@ module Concerns
 
 			def expire_points user, points_to_expire, pli
 				PointLineItem.create(user_id: user.id, points: -points_to_expire,
-					source: "Points ##{pli.id} expired", expired: true)
+					source: expire_source(user, pli), expired: true)
 				pli.update_attribute(:expired, true)
 				expire_redeems user, pli
 			end
@@ -105,6 +105,32 @@ module Concerns
 		   		   break if pli.points > 0
 				   pli.update_attribute(:expired, true)
 		   		end
+			  end
+
+			  def expire_source user, pli
+			  	plis = plis_up_to(user, pli.created_at).order("created_at desc")
+			  	current_pli = pli
+			  	ids = []
+			  	plis.each do |local_pli|
+			  		current_pli = latest_pli_of user, local_pli.created_at
+			  		if current_pli.expired || !points_available?(user, current_pli.created_at) 
+			  			break
+			  		else
+			  			ids.unshift current_pli.id unless ids.include?(current_pli.id)
+			  		end
+
+			  	end
+			  	generate_source_text ids
+
+			  end
+
+			  def generate_source_text ids
+			  	 source = "Points "
+			  	 ids.each_with_index do |id ,index|
+			  	 	source += ", " unless index == 0
+			  	 	source += "##{id}"
+			  	 end
+			  	 source += " expired"
 			  end
 		end
 		

@@ -14,7 +14,7 @@ class PointExpirer
 	def expire(input_date)
 		date = input_date.to_date - 1.year
 		latest_pli = latest_pli_of @user, date
-		if points_available? @user, latest_pli.created_at
+		if !latest_pli.expired && points_available?(@user, latest_pli.created_at) 
 			points_to_expire = points_until_expired(@user, latest_pli.created_at). 
 			                   + redeem_points(@user, latest_pli.created_at)
             expire_points @user, points_to_expire, latest_pli 

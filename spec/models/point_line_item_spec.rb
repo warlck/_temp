@@ -139,7 +139,7 @@ describe PointLineItem do
 		before(:each) do
 			@user = create(:user)
 			@points_to_expire = 20
-			@pli = create(:point_line_item, user_id: @user.id)
+			@pli = create(:point_line_item, user: @user, created_at:'20/02/2013')
 		end
 
  
@@ -150,6 +150,13 @@ describe PointLineItem do
 		it "adds correct source text" do
 			PointLineItem.expire_points(@user, @points_to_expire, @pli)
 			expect(PointLineItem.last.source).to eq "Points ##{@pli.id} expired"
+		end
+
+		it "adds correct source text if multiple available points expired" do
+			last_pli = create(:point_line_item, user: @user, created_at: '21/02/2013')
+			PointLineItem.expire_points(@user, @points_to_expire, last_pli)
+			expect(PointLineItem.last.source).to eq "Points ##{@pli.id}, ##{last_pli.id} expired"
+			
 		end
 
 		it "changes expired field of pli to true" do
