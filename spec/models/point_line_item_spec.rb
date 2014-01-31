@@ -48,6 +48,12 @@ describe PointLineItem do
 			adams_third_item = create(:point_line_item, user: @adam,created_at: '22/01/2014', points: -20)
 			expect(PointLineItem.points_available?(@adam, '20/01/2014')).to eq false
 		end
+
+		it "ignores expired negative entries" do
+			create(:point_line_item, user: @adam,created_at: '21/01/2014', points: 10)
+			create(:point_line_item, user: @adam,created_at: '22/01/2014', points: -20, expired: true)
+			expect(PointLineItem.points_available?(@adam, '20/01/2014')).to eq true
+		end
 	end
 
 	describe ".points_until_expired" do
@@ -124,7 +130,7 @@ describe PointLineItem do
 			expect(PointLineItem.latest_pli_of(@adam, '20/01/2014')).to eq @adams_first_item
 		end
 
-		it "returns the closest positive  point line item entry created  earlier dates if non available on given date" do
+		it "returns the closest positive  point line item entry created  at earlier dates if non available on given date" do
 			expect(PointLineItem.latest_pli_of(@adam, '22/01/2014')).to eq @adams_first_item
 		end
 	end

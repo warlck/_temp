@@ -44,6 +44,12 @@ describe PointExpirer do
 	 		expect(PointLineItem.last.points).to eq -130
 	 	end
 
+	 	it " when expire is called  on different dates in reverse order" do
+	 		point_expirer.expire('28/06/2014')
+	 		point_expirer.expire('13/03/2014')
+	 		expect(PointLineItem.last.points).to eq -395
+	 	end
+
 	 	it "when called for unavalable points" do
 			expect{point_expirer.expire('15/02/2014')}.to change(PointLineItem, :count).by(0)
 	 	end
