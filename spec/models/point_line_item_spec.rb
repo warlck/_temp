@@ -74,6 +74,11 @@ describe PointLineItem do
 			adams_zeroth_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 10:30', points: 20, expired: true)
 			expect(PointLineItem.points_until_expired(@adam, '20/01/2014')).to eq 100
 		end
+
+		it "ignores negative expired points" do
+			create(:point_line_item, user: @adam, created_at: '21/01/2014 10:00', points: -20, expired: true)
+			expect(PointLineItem.points_until_expired(@adam, '22/01/2014')).to eq 110
+		end
 		
 	end
 
@@ -95,6 +100,11 @@ describe PointLineItem do
 		it "redeems points given redeem point line items available after given date" do
 			expect(PointLineItem.redeem_points(@adam, '20/01/2014')).to eq -20
 		end
+
+		it "ignores expired redeem point line items" do
+			create(:point_line_item, user: @adam, created_at: "23/01/2014 10:00", points: -40, expired: true)
+			expect(PointLineItem.redeem_points(@adam, '22/01/2014')).to eq -10
+		end
 	end
 
 	describe ".latest_pli_of" do
@@ -110,11 +120,11 @@ describe PointLineItem do
 			carls_item = create(:point_line_item, user: @carl, created_at: '21/01/2014')
 		end
 
-		it "returns the  user's  last point line item that was created for given date if available" do
+		it "returns the  user's  last point line item that was created at given date if available" do
 			expect(PointLineItem.latest_pli_of(@adam, '20/01/2014')).to eq @adams_first_item
 		end
 
-		it "returns the closest positive  point line item entry created in previously if non available on given date" do
+		it "returns the closest positive  point line item entry created  earlier dates if non available on given date" do
 			expect(PointLineItem.latest_pli_of(@adam, '22/01/2014')).to eq @adams_first_item
 		end
 	end
