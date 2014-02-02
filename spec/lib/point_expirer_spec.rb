@@ -50,7 +50,7 @@ describe PointExpirer do
 	 		expect(PointLineItem.last.points).to eq -395
 	 	end
 
-	 	it " when expire is called  on different dates in reverse order" do
+	 	it "when expire is called on the latest avaialble item" do
 	 		last = create(:point_line_item, created_at: "28/06/2013", user: @adam)
 	 		point_expirer.expire('28/06/2014')
 	 		expect(PointLineItem.last.source).to eq "Points ##{@fifth.id}, ##{@seventh.id}, ##{last.id} expired"

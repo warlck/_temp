@@ -45,59 +45,72 @@ module Concerns
 			  end
 
 			  def plis_after user, input_date
-			  	date = input_date.to_date
-				current_pli = latest_pli_of user, date
+				current_pli = latest_pli_of user, input_date
 			  	where("user_id = ? and created_at > ?", user.id, current_pli.created_at)
 			  end
 
 			  def plis_up_to user, input_date
-			  	date = input_date.to_date
-			    current_pli = latest_pli_of user, date
-				where("user_id = ? and created_at <= ?", user.id, current_pli.created_at)
+			    current_pli = latest_pli_of user, input_date
+				where("user_id = ? and created_at <= ?", user.id, current_pli.created_at).
+				order("created_at desc")
 			  end
 
 			  def available? plis
-			  	available = true
 			  	previous = plis.first
 			  	plis.each do |pli|
-			  		if pli.points > 0 && pli.expired
-			  			available = false
-				  		break
-				  	elsif pli.points < 0 && pli.expired
-				  		nil # do nothing
-				  	elsif (previous.points > 0) && (pli.points < 0)
-				  		available = false
-				  		break
-			  		else 
-			  		    previous = pli
-				    end  
+			  		return false unless decide_availability previous, pli, binding
 			    end
-			    return available
+			    return true
 			  end
 
 
+			  def decide_availability  previous, pli, bndg
+			  	 if pli.points < 0 && pli.expired
+			  		return true # do nothing
+			  	 elsif (previous.points > 0 && pli.points < 0) ||
+			  		   (pli.points > 0 && pli.expired)
+			  		return false
+		  		 else 
+		  		    eval "previous = pli", bndg
+			     end     
+			  end 
+
 			  def sum_until_expired plis
 			  	sum = 0
-			  	plis.order("created_at desc").each do |pli|
-			  		break if pli.points > 0 && pli.expired
-			  		if !(pli.points < 0 && pli.expired)
-			    		sum += pli.points
-			    	end
+			  	plis.each do |pli|
+			  		break unless can_add_to pli, binding
 		    	end
 		    	return sum
 			  end
 
+			  def can_add_to pli, bndg
+			  	 if pli.points > 0 && pli.expired
+			  		false
+			  	 elsif !(pli.points < 0 && pli.expired)
+			    	eval "sum += pli.points", bndg
+			     else
+			     	true
+			     end
+			  end
 
 			  def redeem plis
 			  	points = 0
 		   		plis.each  do |pli|
-		   			break if pli.points > 0
-		   			unless pli.expired
-		   			   points += pli.points
-		   			end
+		   			break unless can_redeem pli, binding
 		   		end
 		   		return points
 			  end
+
+			  def can_redeem pli, bndg
+			  	 if pli.points > 0
+			  	 	false
+			  	 elsif !pli.expired
+			  	 	eval "points += pli.points", bndg
+			  	 else
+			  	 	true
+			  	 end	 
+			  end
+
 
 			  def expire_redeems user, pli
 			  	plis = plis_after user, pli.created_at
@@ -108,21 +121,29 @@ module Concerns
 			  end
 
 			  def expire_source user, pli
-			  	plis = plis_up_to(user, pli.created_at).order("created_at desc")
-			  	current_pli = pli
+			  	plis = plis_up_to(user, pli.created_at)
+			  	ids  = expired_id_list user, plis
+			  	generate_source_text ids
+			  end
+
+			  def expired_id_list user, plis
 			  	ids = []
 			  	plis.each do |local_pli|
-			  		current_pli = latest_pli_of user, local_pli.created_at
-			  		if current_pli.expired || !points_available?(user, current_pli.created_at) 
-			  			break
-			  		else
-			  			ids.unshift current_pli.id unless ids.include?(current_pli.id)
-			  		end
-
+			  		break unless add_to_id_list user,  ids, local_pli
 			  	end
-			  	generate_source_text ids
-
+			  	return ids
 			  end
+
+
+			  def add_to_id_list  user, ids, local_pli
+			  	current_pli = latest_pli_of user, local_pli.created_at
+		  		if current_pli.expired || !points_available?(user, current_pli.created_at) 
+		  			false
+		  		else
+		  			ids.unshift current_pli.id unless ids.include?(current_pli.id)
+		  		end  	
+			  end
+
 
 			  def generate_source_text ids
 			  	 source = "Points "
