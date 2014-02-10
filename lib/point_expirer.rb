@@ -1,7 +1,5 @@
 class PointExpirer
 
-
-
 	def initialize user
 		@user = user
 	end
