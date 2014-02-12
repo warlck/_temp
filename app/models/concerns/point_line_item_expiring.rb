@@ -132,9 +132,23 @@ module Concerns
 			  end
 
 			  def expire_source user, pli
-			  	plis = plis_up_to pli
+			  	plis = prepare_plis_list pli
 			  	ids  = expired_id_list user, plis
 			  	generate_source_text ids
+			  end
+
+			  def prepare_plis_list pli
+				up_to = filter_until_expired plis_up_to(pli)
+				#after = plis_after pli 
+			  end
+
+			  def filter_until_expired plis
+			    arr = [plis.first]
+			    plis.each do |pli|
+			    	break if pli.expired && pli.points > 0
+			    	arr << pli
+			    end
+			    return arr
 			  end
 
 			  def expired_id_list user, plis
@@ -147,11 +161,13 @@ module Concerns
 
 
 			  def add_to_id_list  user, ids, local_pli
+
 			  	current_pli = latest_pli_of user, local_pli.created_at
 		  		if current_pli.expired || !points_available?(local_pli) 
 		  			false
 		  		else
 		  			ids.unshift current_pli.id unless ids.include?(current_pli.id)
+		  			true
 		  		end  	
 			  end
 
