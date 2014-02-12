@@ -31,7 +31,7 @@ describe PointLineItem do
 			@bella = create(:user, name: "Bella")
 			@carl = create(:user, name: "Carl")
 			adams_zeroth_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 10:30', points: 20)
-			adams_first_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 12:30', points: 100)
+			@adams_first_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 12:30', points: 100)
 			bellas_item  = create(:point_line_item, user: @bella, created_at: '20/01/2014')
 			carls_item = create(:point_line_item, user: @carl, created_at: '21/01/2014')
 
@@ -40,19 +40,19 @@ describe PointLineItem do
 		it "returns true if points on certain date are available" do
 			adams_second_item = create(:point_line_item, user: @adam,created_at: '21/01/2014', points: -10)
 			adams_third_item = create(:point_line_item, user: @adam,created_at: '22/01/2014', points: 20)
-			expect(PointLineItem.points_available?(@adam, '20/01/2014')).to eq true
+			expect(PointLineItem.points_available?(@adams_first_item)).to eq true
 		end
 
 		it "returns false if points on certain date are not available" do
 			adams_second_item = create(:point_line_item, user: @adam,created_at: '21/01/2014', points: 10)
 			adams_third_item = create(:point_line_item, user: @adam,created_at: '22/01/2014', points: -20)
-			expect(PointLineItem.points_available?(@adam, '20/01/2014')).to eq false
+			expect(PointLineItem.points_available?(@adams_first_item)).to eq false
 		end
 
 		it "ignores expired negative entries" do
 			create(:point_line_item, user: @adam,created_at: '21/01/2014', points: 10)
 			create(:point_line_item, user: @adam,created_at: '22/01/2014', points: -20, expired: true)
-			expect(PointLineItem.points_available?(@adam, '20/01/2014')).to eq true
+			expect(PointLineItem.points_available?(@adams_first_item)).to eq true
 		end
 	end
 
@@ -94,9 +94,9 @@ describe PointLineItem do
 			@adam = create(:user, name: "Adam")
 			@bella = create(:user, name: "Bella")
 			@carl = create(:user, name: "Carl")
-			adams_first_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 12:30', points: 100)
+			@adams_first_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 12:30', points: 100)
 			adams_second_item = create(:point_line_item, user: @adam,created_at: '21/01/2014', points: -20)
-			adams_third_item = create(:point_line_item, user: @adam,created_at: '22/01/2014', points: 20)
+			@adams_third_item = create(:point_line_item, user: @adam,created_at: '22/01/2014', points: 20)
 			adams_fourth_item = create(:point_line_item, user: @adam,created_at: '23/01/2014', points: -10)
 
 			bellas_item  = create(:point_line_item, user: @bella, created_at: '20/01/2014')
@@ -104,12 +104,12 @@ describe PointLineItem do
 		end
 
 		it "redeems points given redeem point line items available after given date" do
-			expect(PointLineItem.redeem_points(@adam, '20/01/2014')).to eq -20
+			expect(PointLineItem.redeem_points(@adams_first_item)).to eq -20
 		end
 
 		it "ignores expired redeem point line items" do
 			create(:point_line_item, user: @adam, created_at: "23/01/2014 10:00", points: -40, expired: true)
-			expect(PointLineItem.redeem_points(@adam, '22/01/2014')).to eq -10
+			expect(PointLineItem.redeem_points(@adams_third_item)).to eq -10
 		end
 	end
 

@@ -4,8 +4,8 @@ module Concerns
 		
 		module ClassMethods
 			
-			def points_available? user, input_date
-				plis  = plis_after user, input_date
+			def points_available? pli
+				plis  = plis_after pli
 				available? plis
 			end
 
@@ -14,27 +14,24 @@ module Concerns
 			    sum_until_expired plis
 			end
 
-			def redeem_points user, input_date
-				plis = plis_after user, input_date
+			def redeem_points pli
+				plis = plis_after pli
 		        redeem plis
 			end
 
 			def latest_pli_of user, input_date
 		   	  date = input_date.to_date
-		      pli = created_on(user, date)
-		      while pli.nil?
-		        date -= 1.day
-		        pli = created_on(user, date)
-		      end
-		      return pli
+		      where("created_at < ?", date + 1.day).
+			  where("points > 0 and user_id = ? ", user.id).
+			  order("created_at desc").first
 			end
 
 			def expire(user, input_date)
 				date = input_date.to_date - 1.year
 				latest_pli = latest_pli_of user, date
-				if !latest_pli.expired && points_available?(user, latest_pli.created_at) 
+				if !latest_pli.expired && points_available?(latest_pli) 
 					points_to_expire = points_until_expired(user, latest_pli.created_at). 
-					                   + redeem_points(user, latest_pli.created_at)
+					                   + redeem_points(latest_pli)
 		            expire_points user, points_to_expire, latest_pli 
 		        end
 			end
@@ -47,14 +44,10 @@ module Concerns
 			end
 
 			private 
-			  def created_on user, date
-			  	 where(created_at: date..(date+1.day)).where("points > 0 and user_id = ?", user.id).
-			  	 order("created_at desc").first
-			  end
 
-			  def plis_after user, input_date
-				current_pli = latest_pli_of user, input_date
-			  	where("user_id = ? and created_at > ?", user.id, current_pli.created_at)
+
+			  def plis_after pli
+			  	where("user_id = ? and created_at > ?", pli.user_id, pli.created_at)
 			  end
 
 			  def plis_up_to user, input_date
@@ -121,7 +114,7 @@ module Concerns
 
 
 			  def expire_redeems user, pli
-			  	plis = plis_after user, pli.created_at
+			  	plis = plis_after pli
 			  	plis.each  do |pli|
 		   		   break if pli.points > 0
 				   pli.update_attribute(:expired, true)
@@ -145,7 +138,7 @@ module Concerns
 
 			  def add_to_id_list  user, ids, local_pli
 			  	current_pli = latest_pli_of user, local_pli.created_at
-		  		if current_pli.expired || !points_available?(user, current_pli.created_at) 
+		  		if current_pli.expired || !points_available?(local_pli) 
 		  			false
 		  		else
 		  			ids.unshift current_pli.id unless ids.include?(current_pli.id)
