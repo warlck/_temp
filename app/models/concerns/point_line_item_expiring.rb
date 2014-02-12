@@ -6,7 +6,7 @@ module Concerns
 			
 			def points_available? pli
 				plis  = plis_after pli
-				available? plis
+				decide_availability plis
 			end
 
 			def points_until_expired pli
@@ -32,16 +32,16 @@ module Concerns
 				if !latest_pli.expired && points_available?(latest_pli) 
 					points_to_expire = points_until_expired(latest_pli). 
 					                   + redeem_points(latest_pli)
-		            expire_points user, points_to_expire, latest_pli
+		            expire_points  points_to_expire, latest_pli
 		            flush_caches latest_pli
 		        end
 			end
 	  	    
-	  	    def expire_points user, points_to_expire, pli
-			 	PointLineItem.create(user_id: user.id, points: -points_to_expire,
-					source: expire_source(user, pli), expired: true)
+	  	    def expire_points  points_to_expire, pli
+			 	PointLineItem.create(user_id: pli.user_id, points: -points_to_expire,
+					source: expire_source(pli), expired: true)
 				pli.update_attribute(:expired, true)
-				expire_redeems user, pli
+				expire_redeems  pli
 			end
 
 			private 
@@ -66,17 +66,16 @@ module Concerns
 				end
 			  end
 
-			  def available? plis
+			  def decide_availability plis
 			  	previous = plis.first
 			  	plis.each do |pli|
-			  		return false unless decide_availability previous, pli, binding
+			  		return false unless available? previous, pli, binding
 			    end
 			    return true
 			  end
 
 
-			  def decide_availability  previous, pli, bndg
-
+			  def available?  previous, pli, bndg
 			  	 if pli.points < 0 && pli.expired
 			  		return true # do nothing
 			  	 elsif (previous.points > 0 && pli.points < 0) ||
@@ -90,12 +89,12 @@ module Concerns
 			  def sum_until_expired plis
 			  	sum = 0
 			  	plis.each do |pli|
-			  		break unless can_add_to pli, binding
+			  		break unless can_add_to? pli, binding
 		    	end
 		    	return sum
 			  end
 
-			  def can_add_to pli, bndg
+			  def can_add_to? pli, bndg
 			  	 if pli.points > 0 && pli.expired
 			  		false
 			  	 elsif !(pli.points < 0 && pli.expired)
@@ -108,12 +107,12 @@ module Concerns
 			  def redeem plis
 			  	points = 0
 		   		plis.each  do |pli|
-		   			break unless can_redeem pli, binding
+		   			break unless can_redeem? pli, binding
 		   		end
 		   		return points
 			  end
 
-			  def can_redeem pli, bndg
+			  def can_redeem? pli, bndg
 			  	 if pli.points > 0
 			  	 	false
 			  	 elsif !pli.expired
@@ -124,7 +123,7 @@ module Concerns
 			  end
 
 
-			  def expire_redeems user, pli
+			  def expire_redeems pli
 			  	plis = plis_after pli
 			  	plis.each  do |pli|
 		   		   break if pli.points > 0
@@ -132,9 +131,9 @@ module Concerns
 		   		end
 			  end
 
-			  def expire_source user, pli
+			  def expire_source pli
 			  	plis_hash = prepare_plis_list pli
-			  	ids  = expired_id_list user, plis_hash
+			  	ids  = expired_id_list  plis_hash
 			  	generate_source_text ids
 			  end
 
@@ -153,14 +152,14 @@ module Concerns
 			    return arr
 			  end
 
-			  def expired_id_list user, plis_hash
+			  def expired_id_list  plis_hash
 			  	ids = []
 			  	up_to = plis_hash[:up_to] 
 			  	@date = up_to.first.created_at.midnight
 
 			  	up_to.each do |pli|
 			  		index = get_index up_to,  @date
-			  		break if index.nil? || !add_to_id_list(ids, index, plis_hash, binding)
+			  		break if index.nil? || !added_to_id_list?(ids, index, plis_hash, binding)
 			  	end
 			  	
 			  	return ids 
@@ -177,10 +176,10 @@ module Concerns
 			  end
 
 
-			  def add_to_id_list ids, index, plis_hash, bndg
+			  def added_to_id_list? ids, index, plis_hash, bndg
 			  	local_pli = plis_hash[:up_to][index]
 			  	plis = prepare_subarray index, plis_hash
-			    return false if !available? plis
+			    return false if !decide_availability plis
                 ids.unshift local_pli.id unless ids.include?(local_pli.id)
 			  	@date = local_pli.created_at - 1.day
 			  end

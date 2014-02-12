@@ -144,23 +144,23 @@ describe PointLineItem do
 
  
 		it "adds new entry to point_line_items table" do
-			expect{PointLineItem.expire_points(@user, @points_to_expire, @pli)}.to change(PointLineItem, :count).by(1)
+			expect{PointLineItem.expire_points( @points_to_expire, @pli)}.to change(PointLineItem, :count).by(1)
 		end
 
 		it "adds correct source text" do
-			PointLineItem.expire_points(@user, @points_to_expire, @pli)
+			PointLineItem.expire_points( @points_to_expire, @pli)
 			expect(PointLineItem.last.source).to eq "Points ##{@pli.id} expired"
 		end
 
 		it "adds correct source text if multiple available points expired" do
 			last_pli = create(:point_line_item, user: @user, created_at: '21/02/2013')
-			PointLineItem.expire_points(@user, @points_to_expire, last_pli)
+			PointLineItem.expire_points(@points_to_expire, last_pli)
 			expect(PointLineItem.last.source).to eq "Points ##{@pli.id}, ##{last_pli.id} expired"
 			
 		end
 
 		it "changes expired field of pli to true" do
-			PointLineItem.expire_points(@user, @points_to_expire, @pli)
+			PointLineItem.expire_points( @points_to_expire, @pli)
 			expect(@pli.reload.expired).to eq true		
 		end
 	end
