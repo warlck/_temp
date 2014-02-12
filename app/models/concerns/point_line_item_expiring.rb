@@ -154,15 +154,17 @@ module Concerns
 
 			  def expired_id_list  plis_hash
 			  	ids = []
+			  	populate_ids plis_hash, ids
+			  	return ids 
+			  end
+
+			  def populate_ids plis_hash, ids
 			  	up_to = plis_hash[:up_to] 
 			  	@date = up_to.first.created_at.midnight
-
 			  	up_to.each do |pli|
 			  		index = get_index up_to,  @date
 			  		break if index.nil? || !added_to_id_list?(ids, index, plis_hash, binding)
-			  	end
-			  	
-			  	return ids 
+			  	end	 
 			  end
 
 			  def get_index up_to, date 
