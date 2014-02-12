@@ -61,9 +61,9 @@ describe PointLineItem do
 			@adam = create(:user, name: "Adam")
 			@bella = create(:user, name: "Bella")
 			@carl = create(:user, name: "Carl")
-			adams_first_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 12:30', points: 100)
+			@adams_first_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 12:30', points: 100)
 			adams_second_item = create(:point_line_item, user: @adam,created_at: '21/01/2014', points: -10)
-			adams_third_item = create(:point_line_item, user: @adam,created_at: '22/01/2014', points: 20)
+			@adams_third_item = create(:point_line_item, user: @adam,created_at: '22/01/2014', points: 20)
 
 			bellas_item  = create(:point_line_item, user: @bella, created_at: '20/01/2014')
 			carls_item = create(:point_line_item, user: @carl, created_at: '21/01/2014')
@@ -73,17 +73,17 @@ describe PointLineItem do
 
 		it "returns sum of all available points" do
 			adams_zeroth_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 10:30', points: 20)
-			expect(PointLineItem.points_until_expired(@adam, '20/01/2014')).to eq 120
+			expect(PointLineItem.points_until_expired(@adams_first_item)).to eq 120
 		end
 
 		it "does not include expired points" do
 			adams_zeroth_item = create(:point_line_item, user: @adam, created_at: '20/01/2014 10:30', points: 20, expired: true)
-			expect(PointLineItem.points_until_expired(@adam, '20/01/2014')).to eq 100
+			expect(PointLineItem.points_until_expired(@adams_first_item)).to eq 100
 		end
 
 		it "ignores negative expired points" do
 			create(:point_line_item, user: @adam, created_at: '21/01/2014 10:00', points: -20, expired: true)
-			expect(PointLineItem.points_until_expired(@adam, '22/01/2014')).to eq 110
+			expect(PointLineItem.points_until_expired(@adams_third_item)).to eq 110
 		end
 		
 	end

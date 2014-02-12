@@ -9,8 +9,8 @@ module Concerns
 				available? plis
 			end
 
-			def points_until_expired user, input_date
-			    plis = plis_up_to(user, input_date)
+			def points_until_expired pli
+			    plis = plis_up_to pli
 			    sum_until_expired plis
 			end
 
@@ -30,7 +30,7 @@ module Concerns
 				date = input_date.to_date - 1.year
 				latest_pli = latest_pli_of user, date
 				if !latest_pli.expired && points_available?(latest_pli) 
-					points_to_expire = points_until_expired(user, latest_pli.created_at). 
+					points_to_expire = points_until_expired(latest_pli). 
 					                   + redeem_points(latest_pli)
 		            expire_points user, points_to_expire, latest_pli 
 		        end
@@ -50,9 +50,8 @@ module Concerns
 			  	where("user_id = ? and created_at > ?", pli.user_id, pli.created_at)
 			  end
 
-			  def plis_up_to user, input_date
-			    current_pli = latest_pli_of user, input_date
-				where("user_id = ? and created_at <= ?", user.id, current_pli.created_at).
+			  def plis_up_to pli
+				where("user_id = ? and created_at <= ?",pli.user_id, pli.created_at).
 				order("created_at desc")
 			  end
 
@@ -122,7 +121,7 @@ module Concerns
 			  end
 
 			  def expire_source user, pli
-			  	plis = plis_up_to(user, pli.created_at)
+			  	plis = plis_up_to pli
 			  	ids  = expired_id_list user, plis
 			  	generate_source_text ids
 			  end
