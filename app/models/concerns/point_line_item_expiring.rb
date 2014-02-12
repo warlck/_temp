@@ -32,7 +32,8 @@ module Concerns
 				if !latest_pli.expired && points_available?(latest_pli) 
 					points_to_expire = points_until_expired(latest_pli). 
 					                   + redeem_points(latest_pli)
-		            expire_points user, points_to_expire, latest_pli 
+		            expire_points user, points_to_expire, latest_pli
+		            flush_caches latest_pli
 		        end
 			end
 	  	    
@@ -45,14 +46,24 @@ module Concerns
 
 			private 
 
+			  def flush_caches pli
+			  	Rails.cache.delete(["point_line_items","after",pli.id])
+			  	Rails.cache.delete(["point_line_items", "up to",pli.id])
+			  end
+
+
 
 			  def plis_after pli
-			  	where("user_id = ? and created_at > ?", pli.user_id, pli.created_at)
+			  	Rails.cache.fetch(["point_line_items","after",pli.id]) do 
+			  	  where("user_id = ? and created_at > ?", pli.user_id, pli.created_at)
+			    end
 			  end
 
 			  def plis_up_to pli
-				where("user_id = ? and created_at <= ?",pli.user_id, pli.created_at).
-				order("created_at desc")
+			  	Rails.cache.fetch(["point_line_items", "up to",pli.id]) do
+					where("user_id = ? and created_at <= ?",pli.user_id, pli.created_at).
+					order("created_at desc")
+				end
 			  end
 
 			  def available? plis
