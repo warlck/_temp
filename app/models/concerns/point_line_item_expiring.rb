@@ -49,6 +49,7 @@ module Concerns
 			  def flush_caches pli
 			  	Rails.cache.delete(["point_line_items","after",pli.id])
 			  	Rails.cache.delete(["point_line_items", "up to",pli.id])
+			  	Rails.cache.clear
 			  end
 
 
@@ -76,6 +77,7 @@ module Concerns
 
 
 			  def decide_availability  previous, pli, bndg
+
 			  	 if pli.points < 0 && pli.expired
 			  		return true # do nothing
 			  	 elsif (previous.points > 0 && pli.points < 0) ||
@@ -132,44 +134,56 @@ module Concerns
 			  end
 
 			  def expire_source user, pli
-			  	plis = prepare_plis_list pli
-			  	ids  = expired_id_list user, plis
+			  	plis_hash = prepare_plis_list pli
+			  	ids  = expired_id_list user, plis_hash
 			  	generate_source_text ids
 			  end
 
 			  def prepare_plis_list pli
+				after = plis_after pli 
 				up_to = filter_until_expired plis_up_to(pli)
-				#after = plis_after pli 
+				{after: after, up_to: up_to}
 			  end
 
 			  def filter_until_expired plis
 			    arr = [plis.first]
 			    plis.each do |pli|
 			    	break if pli.expired && pli.points > 0
-			    	arr << pli
+			    	arr << pli unless arr.include?(pli)
 			    end
 			    return arr
 			  end
 
-			  def expired_id_list user, plis
+			  def expired_id_list user, plis_hash
 			  	ids = []
-			  	plis
-			  	plis.each do |local_pli|
-			  		break unless add_to_id_list user,  ids, local_pli
+			  	up_to = plis_hash[:up_to] 
+			  	@date = up_to.first.created_at.midnight
+
+			  	up_to.each do |pli|
+			  		index = get_index up_to,  @date
+			  		break if index.nil? || !add_to_id_list(ids, index, plis_hash, binding)
 			  	end
-			  	return ids
+			  	
+			  	return ids 
+			  end
+
+			  def get_index up_to, date 
+			  	up_to.index {|x| x.created_at < (date + 1.day) && x.points > 0 }
+			  end
+
+			  def prepare_subarray index, plis_hash
+			  	arr  = plis_hash[:up_to].reverse + plis_hash[:after]
+			  	indx = plis_hash[:up_to].length-1-index
+			  	arr[indx+1..-1]
 			  end
 
 
-			  def add_to_id_list  user, ids, local_pli
-
-			  	current_pli = latest_pli_of user, local_pli.created_at
-		  		if current_pli.expired || !points_available?(local_pli) 
-		  			false
-		  		else
-		  			ids.unshift current_pli.id unless ids.include?(current_pli.id)
-		  			true
-		  		end  	
+			  def add_to_id_list ids, index, plis_hash, bndg
+			  	local_pli = plis_hash[:up_to][index]
+			  	plis = prepare_subarray index, plis_hash
+			    return false if !available? plis
+                ids.unshift local_pli.id unless ids.include?(local_pli.id)
+			  	@date = local_pli.created_at - 1.day
 			  end
 
 
