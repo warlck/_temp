@@ -49,7 +49,6 @@ module Concerns
 			  def flush_caches pli
 			  	Rails.cache.delete(["point_line_items","after",pli.id])
 			  	Rails.cache.delete(["point_line_items", "up to",pli.id])
-			  	Rails.cache.clear
 			  end
 
 
