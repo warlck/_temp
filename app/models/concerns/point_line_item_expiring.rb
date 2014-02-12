@@ -55,14 +55,14 @@ module Concerns
 
 			  def plis_after pli
 			  	Rails.cache.fetch(["point_line_items","after",pli.id]) do 
-			  	  where("user_id = ? and created_at > ?", pli.user_id, pli.created_at)
+			  	  where("user_id = ? and created_at > ?", pli.user_id, pli.created_at).to_a
 			    end
 			  end
 
 			  def plis_up_to pli
 			  	Rails.cache.fetch(["point_line_items", "up to",pli.id]) do
 					where("user_id = ? and created_at <= ?",pli.user_id, pli.created_at).
-					order("created_at desc")
+					order("created_at desc").to_a
 				end
 			  end
 
@@ -153,6 +153,7 @@ module Concerns
 
 			  def expired_id_list user, plis
 			  	ids = []
+			  	plis
 			  	plis.each do |local_pli|
 			  		break unless add_to_id_list user,  ids, local_pli
 			  	end
